@@ -1,0 +1,277 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: kafka-demo-producer
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: kafka-demo-topic
+        operations: [ Write, Create, Describe ]
+
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: kafka-demo-consumer
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: kafka-demo-topic
+        operations: [ Read, Describe ]
+      - resource:
+          type: group
+          name: kafka-demo-group
+        operations: [ Read ]
+
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: kafka-demo-stream
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: kafka-demo-topic
+        operations: [ Read, Describe ]
+      - resource:
+          type: topic
+          name: kafka-demo-transformed
+        operations: [ Write, Create, Describe ]
+      - resource:
+          type: group
+          name: kafka-demo-stream
+        operations: [ Read ]
+
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: kafka-demo-topic
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 3
+  replicas: 2
+  config:
+    retention.bytes: 1073741824
+    retention.ms: 86400000 # 1 day
+    segment.bytes: 1073741824
+
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: kafka-demo-topic-transformed
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 3
+  replicas: 2
+  config:
+    retention.bytes: 1073741824
+    retention.ms: 86400000 # 1 day
+    segment.bytes: 1073741824
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-demo-producer
+  namespace: kafka
+  labels:
+    app: kafka-demo-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-demo-producer
+  template:
+    metadata:
+      labels:
+        app: kafka-demo-producer
+    spec:
+      imagePullSecrets:
+        - name: ghcr-cred
+      containers:
+        - name: producer
+          image: ghcr.io/jacquelineselbach/kafka-on-k8s-producer:0.0.1
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: CA_CRT
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-cluster-cluster-ca-cert
+                  key: ca.crt
+            - name: USER_CRT
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-demo-producer
+                  key: user.crt
+            - name: USER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-demo-producer
+                  key: user.key
+            - name: BOOTSTRAP_SERVERS
+              value: kafka-cluster-kafka-bootstrap:9093
+            - name: TOPIC
+              value: kafka-demo-topic
+            - name: TIMER
+              value: "1000"
+            - name: NUMBER_OF_KEYS
+              value: "10"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-demo-consumer
+  namespace: kafka
+  labels:
+    app: kafka-demo-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-demo-consumer
+  template:
+    metadata:
+      labels:
+        app: kafka-demo-consumer
+    spec:
+      imagePullSecrets:
+        - name: ghcr-cred
+      containers:
+        - name: consumer
+          image: ghcr.io/jacquelineselbach/kafka-on-k8s-consumer:0.0.1
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: CA_CRT
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-cluster-cluster-ca-cert
+                  key: ca.crt
+            - name: USER_CRT
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-demo-consumer
+                  key: user.crt
+            - name: USER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-demo-consumer
+                  key: user.key
+            - name: BOOTSTRAP_SERVERS
+              value: kafka-cluster-kafka-bootstrap:9093
+            - name: TOPIC
+              value: kafka-demo-topic
+            - name: GROUP_ID
+              value: kafka-demo-group
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-demo-stream
+  namespace: kafka
+  labels:
+    app: kafka-demo-stream
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-demo-stream
+  template:
+    metadata:
+      labels:
+        app: kafka-demo-stream
+    spec:
+      imagePullSecrets:
+        - name: ghcr-cred
+      containers:
+        - name: streams
+          image: ghcr.io/jacquelineselbach/kafka-on-k8s-stream:0.0.1
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ "ALL" ]
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: BOOTSTRAP_SERVERS
+              value: kafka-cluster-kafka-bootstrap:9093
+            - name: USER_P12
+              value: /certs/user.p12
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-demo-stream
+                  key: user.password
+            - name: CA_P12
+              value: /certs/ca.p12
+            - name: CA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-cluster-cluster-ca-cert
+                  key: ca.password
+            - name: STREAMS_APP_ID
+              value: kafka-demo-stream
+            - name: TOPIC
+              value: kafka-demo-topic
+            - name: TOPIC_OUT
+              value: kafka-demo-transformed
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+      volumes:
+        - name: certs
+          projected:
+            sources:
+              - secret:
+                  name: kafka-demo-stream
+              - secret:
+                  name: kafka-cluster-cluster-ca-cert
