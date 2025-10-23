@@ -6,6 +6,12 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
+/**
+ * Generic JSON Serde for Kafka messages.
+ * Used to serialize objects to JSON bytes (producer) and
+ * deserialize JSON bytes back to objects (consumer).
+ * Implements Kafka's Serde interface.
+ */
 @RequiredArgsConstructor
 public class JacksonSerde<T> implements Serde<T> {
 
@@ -22,6 +28,7 @@ public class JacksonSerde<T> implements Serde<T> {
             }
         };
     }
+
 
     @Override
     public Deserializer<T> deserializer() {

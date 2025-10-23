@@ -13,6 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * Kafka Stream topology is the blueprint of a data processing pipeline in Kafka Streams.
+ * It describes how data moves from input topics through processing steps
+ * (transformations, filters, mappings, aggregations) to output topics.
+ * In this case: inputTopic is the source, peek/mapValues are the processing steps outputTopic is the sink.
+ */
 @Slf4j
 @Component
 public class StreamTopology {
@@ -29,8 +35,10 @@ public class StreamTopology {
     @Autowired
     public void buildPipeline(StreamsBuilder builder) {
 
+        // Source processor: reads events from the input topic
         KStream<String, Event> stream = builder.stream(inputTopic, Consumed.with(STRING_SERDE, EVENT_SERDE));
 
+        // Stream processor: transform and log events
         stream
                 .peek((key, value) -> log.info("Received key={} value={} from topic={}", key, value, inputTopic))
                 .mapValues(event -> Event.builder()
@@ -38,6 +46,7 @@ public class StreamTopology {
                         .message(event.message().replace("hello kafka", "hello women"))
                         .build())
                 .peek((key, value) -> log.info("Transformed key={} value={} sending to topic={}", key, value, outputTopic))
+                // Sink processor: write transformed events to output topic
                 .to(outputTopic, Produced.with(STRING_SERDE, EVENT_SERDE));
     }
 }

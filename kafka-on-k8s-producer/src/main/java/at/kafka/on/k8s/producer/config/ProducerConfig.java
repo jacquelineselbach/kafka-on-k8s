@@ -13,6 +13,11 @@ import org.springframework.kafka.core.ProducerFactory;
 
 import java.util.Map;
 
+/**
+ * Kafka producer configuration class is a central place for setting up the Kafka producer infrastructure.
+ * Instead of configuring serializers, factories, and templates manually,
+ * we expose them as beans so that Spring can wire them into services automatically.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class ProducerConfig {

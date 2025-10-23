@@ -141,7 +141,7 @@ strimzi-cluster-operator-64574988c8-vmqv8       1/1     Running   0          19m
    kubectl delete -f k8s/cluster.yaml
 ```
 
-Watch and wait until all pods have been deleted (control+c to stop watching)
+Watch and wait until all pods (excluding operator pod) have been deleted (control+c to stop watching)
 
 ```bash
    kubectl get pods -n kafka -w
@@ -149,7 +149,10 @@ Watch and wait until all pods have been deleted (control+c to stop watching)
 ```bash
    kubectl delete -f "https://strimzi.io/install/latest?namespace=kafka"
 ```
-Once all pods have been deleted:
+```bash
+   kubectl get pods -n kafka
+```
+Once all pods (including operator) have been deleted:
 
 ```bash
    kubectl delete namespace kafka

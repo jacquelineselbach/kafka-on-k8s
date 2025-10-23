@@ -14,6 +14,12 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
 import java.util.Map;
 
+/**
+ * Kafka consumer configuration class registers the beans needed to consume messages from Kafka: JSON Serde for
+ * converting between bytes and Event objects, ConsumerFactory for creating Kafka consumers,
+ * ListenerContainerFactory to support @KafkaListener
+ *
+ */
 @EnableKafka
 @Configuration
 @RequiredArgsConstructor

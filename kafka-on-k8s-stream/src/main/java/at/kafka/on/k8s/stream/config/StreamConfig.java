@@ -9,6 +9,12 @@ import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.kafka.annotation.KafkaStreamsDefaultConfiguration;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 
+
+/**
+ * Kafka stream configuration class uses the application properties to set up the Streams runtime.
+ * * @EnableKafka enables basic Kafka support in the Spring context (e.g. listeners, consumer setup).
+ * * @EnableKafkaStreams turns on Kafka Streams support and tells Spring to manage the Kafka Streams lifecycle.
+ */
 @Configuration
 @EnableKafka
 @EnableKafkaStreams

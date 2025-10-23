@@ -6,6 +6,11 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 
+/**
+ * Kafka consumer service listens to the configured Kafka topic and processes incoming Event messages.
+ * Thanks to the configured Serde, the listener receives fully deserialized Event objects
+ * instead of raw byte arrays or strings.
+ */
 @Slf4j
 @Service
 class ConsumerService {
